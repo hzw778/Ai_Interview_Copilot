@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.resume.repository.ResumeRepository">
+
+  <resultMap id="ResumeEntityMap" type="interview.guide.modules.resume.model.ResumeEntity">
+    <id property="id" column="id"/>
+    <result property="fileHash" column="file_hash"/>
+    <result property="originalFilename" column="original_filename"/>
+    <result property="fileSize" column="file_size"/>
+    <result property="contentType" column="content_type"/>
+    <result property="storageKey" column="storage_key"/>
+    <result property="storageUrl" column="storage_url"/>
+    <result property="resumeText" column="resume_text"/>
+    <result property="uploadedAt" column="uploaded_at"/>
+    <result property="lastAccessedAt" column="last_accessed_at"/>
+    <result property="accessCount" column="access_count"/>
+    <result property="analyzeStatus" column="analyze_status"/>
+    <result property="analyzeError" column="analyze_error"/>
+  </resultMap>
+
+  <select id="selectByIdInternal" resultMap="ResumeEntityMap">
+    SELECT * FROM resumes WHERE id = #{id}
+  </select>
+
+  <select id="selectByFileHashInternal" resultMap="ResumeEntityMap">
+    SELECT * FROM resumes WHERE file_hash = #{fileHash}
+  </select>
+
+  <select id="countByIdInternal" resultType="int">
+    SELECT COUNT(*) FROM resumes WHERE id = #{id}
+  </select>
+
+  <select id="countByFileHashInternal" resultType="int">
+    SELECT COUNT(*) FROM resumes WHERE file_hash = #{fileHash}
+  </select>
+
+  <select id="findAll" resultMap="ResumeEntityMap">
+    SELECT * FROM resumes ORDER BY uploaded_at DESC
+  </select>
+
+  <insert id="insertEntity" useGeneratedKeys="true" keyProperty="entity.id">
+    INSERT INTO resumes (
+      file_hash,
+      original_filename,
+      file_size,
+      content_type,
+      storage_key,
+      storage_url,
+      resume_text,
+      uploaded_at,
+      last_accessed_at,
+      access_count,
+      analyze_status,
+      analyze_error
+    ) VALUES (
+      #{entity.fileHash},
+      #{entity.originalFilename},
+      #{entity.fileSize},
+      #{entity.contentType},
+      #{entity.storageKey},
+      #{entity.storageUrl},
+      #{entity.resumeText},
+      COALESCE(#{entity.uploadedAt}, NOW()),
+      COALESCE(#{entity.lastAccessedAt}, NOW()),
+      COALESCE(#{entity.accessCount}, 1),
+      #{entity.analyzeStatus},
+      #{entity.analyzeError}
+    )
+  </insert>
+
+  <update id="updateEntity">
+    UPDATE resumes
+    SET file_hash = #{entity.fileHash},
+        original_filename = #{entity.originalFilename},
+        file_size = #{entity.fileSize},
+        content_type = #{entity.contentType},
+        storage_key = #{entity.storageKey},
+        storage_url = #{entity.storageUrl},
+        resume_text = #{entity.resumeText},
+        uploaded_at = #{entity.uploadedAt},
+        last_accessed_at = #{entity.lastAccessedAt},
+        access_count = #{entity.accessCount},
+        analyze_status = #{entity.analyzeStatus},
+        analyze_error = #{entity.analyzeError}
+    WHERE id = #{entity.id}
+  </update>
+
+  <delete id="deleteByIdInternal">
+    DELETE FROM resumes WHERE id = #{id}
+  </delete>
+</mapper>

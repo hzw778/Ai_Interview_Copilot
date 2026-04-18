@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.interview.repository.InterviewSessionRepository">
+
+  <resultMap id="InterviewSessionEntityMap" type="interview.guide.modules.interview.model.InterviewSessionEntity">
+    <id property="id" column="id"/>
+    <result property="sessionId" column="session_id"/>
+    <result property="skillId" column="skill_id"/>
+    <result property="difficulty" column="difficulty"/>
+    <result property="resumeId" column="resume_id"/>
+    <result property="totalQuestions" column="total_questions"/>
+    <result property="currentQuestionIndex" column="current_question_index"/>
+    <result property="status" column="status"/>
+    <result property="questionsJson" column="questions_json"/>
+    <result property="overallScore" column="overall_score"/>
+    <result property="overallFeedback" column="overall_feedback"/>
+    <result property="strengthsJson" column="strengths_json"/>
+    <result property="improvementsJson" column="improvements_json"/>
+    <result property="referenceAnswersJson" column="reference_answers_json"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="completedAt" column="completed_at"/>
+    <result property="evaluateStatus" column="evaluate_status"/>
+    <result property="evaluateError" column="evaluate_error"/>
+    <result property="llmProvider" column="llm_provider"/>
+    <association property="resume" javaType="interview.guide.modules.resume.model.ResumeEntity">
+      <id property="id" column="r_id"/>
+      <result property="fileHash" column="r_file_hash"/>
+      <result property="originalFilename" column="r_original_filename"/>
+      <result property="fileSize" column="r_file_size"/>
+      <result property="contentType" column="r_content_type"/>
+      <result property="storageKey" column="r_storage_key"/>
+      <result property="storageUrl" column="r_storage_url"/>
+      <result property="resumeText" column="r_resume_text"/>
+      <result property="uploadedAt" column="r_uploaded_at"/>
+      <result property="lastAccessedAt" column="r_last_accessed_at"/>
+      <result property="accessCount" column="r_access_count"/>
+      <result property="analyzeStatus" column="r_analyze_status"/>
+      <result property="analyzeError" column="r_analyze_error"/>
+    </association>
+  </resultMap>
+
+  <sql id="InterviewSessionSelect">
+    SELECT s.id,
+           s.session_id,
+           s.skill_id,
+           s.difficulty,
+           s.resume_id,
+           s.total_questions,
+           s.current_question_index,
+           s.status,
+           s.questions_json,
+           s.overall_score,
+           s.overall_feedback,
+           s.strengths_json,
+           s.improvements_json,
+           s.reference_answers_json,
+           s.created_at,
+           s.completed_at,
+           s.evaluate_status,
+           s.evaluate_error,
+           s.llm_provider,
+           r.id AS r_id,
+           r.file_hash AS r_file_hash,
+           r.original_filename AS r_original_filename,
+           r.file_size AS r_file_size,
+           r.content_type AS r_content_type,
+           r.storage_key AS r_storage_key,
+           r.storage_url AS r_storage_url,
+           r.resume_text AS r_resume_text,
+           r.uploaded_at AS r_uploaded_at,
+           r.last_accessed_at AS r_last_accessed_at,
+           r.access_count AS r_access_count,
+           r.analyze_status AS r_analyze_status,
+           r.analyze_error AS r_analyze_error
+    FROM interview_sessions s
+    LEFT JOIN resumes r ON r.id = s.resume_id
+  </sql>
+
+  <select id="selectBySessionIdInternal" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    WHERE s.session_id = #{sessionId}
+  </select>
+
+  <select id="selectByResumeIdOrderByCreatedAtDescInternal" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    WHERE s.resume_id = #{resumeId}
+    ORDER BY s.created_at DESC
+  </select>
+
+  <select id="selectTop10ByResumeIdOrderByCreatedAtDescInternal" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    WHERE s.resume_id = #{resumeId}
+    ORDER BY s.created_at DESC
+    LIMIT 10
+  </select>
+
+  <select id="selectFirstByResumeIdAndStatusInOrderByCreatedAtDescInternal" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    WHERE s.resume_id = #{resumeId}
+      AND s.status IN
+      <foreach collection="statuses" item="status" open="(" separator="," close=")">
+        #{status}
+      </foreach>
+    ORDER BY s.created_at DESC
+    LIMIT 1
+  </select>
+
+  <select id="selectByResumeIdAndStatusInInternal" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    WHERE s.resume_id = #{resumeId}
+      AND s.status IN
+      <foreach collection="statuses" item="status" open="(" separator="," close=")">
+        #{status}
+      </foreach>
+    ORDER BY s.created_at DESC
+    LIMIT 1
+  </select>
+
+  <select id="findAllByOrderByCreatedAtDesc" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    ORDER BY s.created_at DESC
+  </select>
+
+  <select id="findTop10BySkillIdOrderByCreatedAtDesc" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    WHERE s.skill_id = #{skillId}
+    ORDER BY s.created_at DESC
+    LIMIT 10
+  </select>
+
+  <select id="findTop10ByResumeIdAndSkillIdOrderByCreatedAtDesc" resultMap="InterviewSessionEntityMap">
+    <include refid="InterviewSessionSelect"/>
+    WHERE s.resume_id = #{resumeId}
+      AND s.skill_id = #{skillId}
+    ORDER BY s.created_at DESC
+    LIMIT 10
+  </select>
+
+  <insert id="insertEntity" useGeneratedKeys="true" keyProperty="entity.id">
+    INSERT INTO interview_sessions (
+      session_id,
+      skill_id,
+      difficulty,
+      resume_id,
+      total_questions,
+      current_question_index,
+      status,
+      questions_json,
+      overall_score,
+      overall_feedback,
+      strengths_json,
+      improvements_json,
+      reference_answers_json,
+      created_at,
+      completed_at,
+      evaluate_status,
+      evaluate_error,
+      llm_provider
+    ) VALUES (
+      #{entity.sessionId},
+      #{entity.skillId},
+      #{entity.difficulty},
+      <choose>
+        <when test="entity.resume != null">#{entity.resume.id}</when>
+        <otherwise>#{entity.resumeId}</otherwise>
+      </choose>,
+      #{entity.totalQuestions},
+      #{entity.currentQuestionIndex},
+      #{entity.status},
+      #{entity.questionsJson},
+      #{entity.overallScore},
+      #{entity.overallFeedback},
+      #{entity.strengthsJson},
+      #{entity.improvementsJson},
+      #{entity.referenceAnswersJson},
+      COALESCE(#{entity.createdAt}, NOW()),
+      #{entity.completedAt},
+      #{entity.evaluateStatus},
+      #{entity.evaluateError},
+      #{entity.llmProvider}
+    )
+  </insert>
+
+  <update id="updateEntity">
+    UPDATE interview_sessions
+    SET session_id = #{entity.sessionId},
+        skill_id = #{entity.skillId},
+        difficulty = #{entity.difficulty},
+        resume_id =
+        <choose>
+          <when test="entity.resume != null">#{entity.resume.id}</when>
+          <otherwise>#{entity.resumeId}</otherwise>
+        </choose>,
+        total_questions = #{entity.totalQuestions},
+        current_question_index = #{entity.currentQuestionIndex},
+        status = #{entity.status},
+        questions_json = #{entity.questionsJson},
+        overall_score = #{entity.overallScore},
+        overall_feedback = #{entity.overallFeedback},
+        strengths_json = #{entity.strengthsJson},
+        improvements_json = #{entity.improvementsJson},
+        reference_answers_json = #{entity.referenceAnswersJson},
+        created_at = #{entity.createdAt},
+        completed_at = #{entity.completedAt},
+        evaluate_status = #{entity.evaluateStatus},
+        evaluate_error = #{entity.evaluateError},
+        llm_provider = #{entity.llmProvider}
+    WHERE id = #{entity.id}
+  </update>
+
+  <delete id="deleteByIdInternal">
+    DELETE FROM interview_sessions WHERE id = #{id}
+  </delete>
+</mapper>

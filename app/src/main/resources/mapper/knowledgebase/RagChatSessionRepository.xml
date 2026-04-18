@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.knowledgebase.repository.RagChatSessionRepository">
+
+  <resultMap id="KnowledgeBaseEntityMap" type="interview.guide.modules.knowledgebase.model.KnowledgeBaseEntity">
+    <id property="id" column="id"/>
+    <result property="fileHash" column="file_hash"/>
+    <result property="name" column="name"/>
+    <result property="category" column="category"/>
+    <result property="originalFilename" column="original_filename"/>
+    <result property="fileSize" column="file_size"/>
+    <result property="contentType" column="content_type"/>
+    <result property="storageKey" column="storage_key"/>
+    <result property="storageUrl" column="storage_url"/>
+    <result property="uploadedAt" column="uploaded_at"/>
+    <result property="lastAccessedAt" column="last_accessed_at"/>
+    <result property="accessCount" column="access_count"/>
+    <result property="questionCount" column="question_count"/>
+    <result property="vectorStatus" column="vector_status"/>
+    <result property="vectorError" column="vector_error"/>
+    <result property="chunkCount" column="chunk_count"/>
+  </resultMap>
+
+  <resultMap id="RagChatSessionMap" type="interview.guide.modules.knowledgebase.model.RagChatSessionEntity">
+    <id property="id" column="id"/>
+    <result property="title" column="title"/>
+    <result property="status" column="status"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+    <result property="messageCount" column="message_count"/>
+    <result property="isPinned" column="is_pinned"/>
+  </resultMap>
+
+  <resultMap id="RagChatSessionWithKnowledgeBasesMap"
+             type="interview.guide.modules.knowledgebase.model.RagChatSessionEntity"
+             extends="RagChatSessionMap">
+    <collection property="knowledgeBases"
+                ofType="interview.guide.modules.knowledgebase.model.KnowledgeBaseEntity"
+                column="id"
+                select="selectKnowledgeBasesBySessionId"/>
+  </resultMap>
+
+  <select id="selectByIdInternal" resultMap="RagChatSessionMap">
+    SELECT * FROM rag_chat_sessions WHERE id = #{id}
+  </select>
+
+  <select id="findByStatusOrderByUpdatedAtDesc" resultMap="RagChatSessionMap">
+    SELECT * FROM rag_chat_sessions
+    WHERE status = #{status}
+    ORDER BY updated_at DESC
+  </select>
+
+  <select id="findAllByOrderByUpdatedAtDesc" resultMap="RagChatSessionMap">
+    SELECT * FROM rag_chat_sessions ORDER BY updated_at DESC
+  </select>
+
+  <select id="findAllOrderByPinnedAndUpdatedAtDesc" resultMap="RagChatSessionMap">
+    SELECT * FROM rag_chat_sessions
+    ORDER BY is_pinned DESC, updated_at DESC
+  </select>
+
+  <select id="findByKnowledgeBaseIds" resultMap="RagChatSessionWithKnowledgeBasesMap">
+    SELECT DISTINCT s.*
+    FROM rag_chat_sessions s
+    JOIN rag_session_knowledge_bases sk ON sk.session_id = s.id
+    WHERE sk.knowledge_base_id IN
+    <foreach collection="kbIds" item="kbId" open="(" separator="," close=")">
+      #{kbId}
+    </foreach>
+    ORDER BY s.updated_at DESC
+  </select>
+
+  <select id="selectKnowledgeBasesBySessionId" resultMap="KnowledgeBaseEntityMap">
+    SELECT kb.*
+    FROM knowledge_bases kb
+    JOIN rag_session_knowledge_bases sk ON sk.knowledge_base_id = kb.id
+    WHERE sk.session_id = #{sessionId}
+    ORDER BY kb.uploaded_at DESC
+  </select>
+
+  <select id="countByIdInternal" resultType="int">
+    SELECT COUNT(*) FROM rag_chat_sessions WHERE id = #{id}
+  </select>
+
+  <insert id="insertEntity" useGeneratedKeys="true" keyProperty="entity.id">
+    INSERT INTO rag_chat_sessions (
+      title,
+      status,
+      created_at,
+      updated_at,
+      message_count,
+      is_pinned
+    ) VALUES (
+      #{entity.title},
+      #{entity.status},
+      COALESCE(#{entity.createdAt}, NOW()),
+      COALESCE(#{entity.updatedAt}, NOW()),
+      COALESCE(#{entity.messageCount}, 0),
+      COALESCE(#{entity.isPinned}, FALSE)
+    )
+  </insert>
+
+  <update id="updateEntity">
+    UPDATE rag_chat_sessions
+    SET title = #{entity.title},
+        status = #{entity.status},
+        created_at = #{entity.createdAt},
+        updated_at = COALESCE(#{entity.updatedAt}, NOW()),
+        message_count = #{entity.messageCount},
+        is_pinned = #{entity.isPinned}
+    WHERE id = #{entity.id}
+  </update>
+
+  <delete id="deleteById">
+    DELETE FROM rag_chat_sessions WHERE id = #{id}
+  </delete>
+
+  <delete id="deleteKnowledgeBaseRelations">
+    DELETE FROM rag_session_knowledge_bases WHERE session_id = #{sessionId}
+  </delete>
+
+  <insert id="insertKnowledgeBaseRelation">
+    INSERT INTO rag_session_knowledge_bases (session_id, knowledge_base_id)
+    VALUES (#{sessionId}, #{knowledgeBaseId})
+  </insert>
+</mapper>

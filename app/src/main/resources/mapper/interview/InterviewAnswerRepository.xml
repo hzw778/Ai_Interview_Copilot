@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.interview.repository.InterviewAnswerRepository">
+
+  <resultMap id="InterviewAnswerEntityMap" type="interview.guide.modules.interview.model.InterviewAnswerEntity">
+    <id property="id" column="id"/>
+    <result property="questionIndex" column="question_index"/>
+    <result property="question" column="question"/>
+    <result property="category" column="category"/>
+    <result property="userAnswer" column="user_answer"/>
+    <result property="score" column="score"/>
+    <result property="feedback" column="feedback"/>
+    <result property="referenceAnswer" column="reference_answer"/>
+    <result property="keyPointsJson" column="key_points_json"/>
+    <result property="answeredAt" column="answered_at"/>
+    <association property="session" javaType="interview.guide.modules.interview.model.InterviewSessionEntity">
+      <id property="id" column="session_id"/>
+    </association>
+  </resultMap>
+
+  <select id="findBySessionIdOrderByQuestionIndex" resultMap="InterviewAnswerEntityMap">
+    SELECT * FROM interview_answers
+    WHERE session_id = #{sessionId}
+    ORDER BY question_index ASC
+  </select>
+
+  <select id="findBySessionStringIdOrderByQuestionIndex" resultMap="InterviewAnswerEntityMap">
+    SELECT a.*
+    FROM interview_answers a
+    JOIN interview_sessions s ON s.id = a.session_id
+    WHERE s.session_id = #{sessionId}
+    ORDER BY a.question_index ASC
+  </select>
+
+  <select id="findBySessionStringIdAndQuestionIndexInternal" resultMap="InterviewAnswerEntityMap">
+    SELECT a.*
+    FROM interview_answers a
+    JOIN interview_sessions s ON s.id = a.session_id
+    WHERE s.session_id = #{sessionId}
+      AND a.question_index = #{questionIndex}
+    LIMIT 1
+  </select>
+
+  <insert id="insertEntity" useGeneratedKeys="true" keyProperty="entity.id">
+    INSERT INTO interview_answers (
+      session_id,
+      question_index,
+      question,
+      category,
+      user_answer,
+      score,
+      feedback,
+      reference_answer,
+      key_points_json,
+      answered_at
+    ) VALUES (
+      #{entity.session.id},
+      #{entity.questionIndex},
+      #{entity.question},
+      #{entity.category},
+      #{entity.userAnswer},
+      #{entity.score},
+      #{entity.feedback},
+      #{entity.referenceAnswer},
+      #{entity.keyPointsJson},
+      COALESCE(#{entity.answeredAt}, NOW())
+    )
+  </insert>
+
+  <update id="updateEntity">
+    UPDATE interview_answers
+    SET session_id = #{entity.session.id},
+        question_index = #{entity.questionIndex},
+        question = #{entity.question},
+        category = #{entity.category},
+        user_answer = #{entity.userAnswer},
+        score = #{entity.score},
+        feedback = #{entity.feedback},
+        reference_answer = #{entity.referenceAnswer},
+        key_points_json = #{entity.keyPointsJson},
+        answered_at = #{entity.answeredAt}
+    WHERE id = #{entity.id}
+  </update>
+</mapper>

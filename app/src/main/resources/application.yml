@@ -1,0 +1,145 @@
+logging:
+  charset:
+    console: UTF-8
+    file: UTF-8
+  level:
+    org.springframework.ai: debug
+    interview.guide: debug
+
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: interview.guide.modules
+
+spring:
+  application:
+    name: ai-interview-copilot
+  profiles:
+    active: local
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 30MB
+      max-request-size: 30MB
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/ai_interview_copilot?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${MYSQL_USERNAME:}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      initialization-fail-timeout: 0
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 5s
+  ai:
+    openai:
+      api-key: ${DASHSCOPE_API_KEY:}
+      base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+      chat:
+        options:
+          model: ${QWEN_CHAT_MODEL:qwen-plus}
+          temperature: 0.2
+      embedding:
+        options:
+          model: ${QWEN_EMBEDDING_MODEL:text-embedding-v3}
+    retry:
+      max-attempts: 1
+      on-client-errors: false
+    vectorstore:
+      redis:
+        initialize-schema: true
+        index-name: ${REDIS_VECTOR_INDEX:ai_interview_copilot_idx}
+        prefix: ${REDIS_VECTOR_PREFIX:rag:}
+  sql:
+    init:
+      mode: always
+      platform: mysql
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: interview.guide.modules.resume.model,interview.guide.modules.interview.model,interview.guide.modules.knowledgebase.model
+  configuration:
+    map-underscore-to-camel-case: true
+
+app:
+  metadata:
+    version: ${APP_VERSION:0.0.1-SNAPSHOT}
+  ai:
+    default-provider: ${APP_AI_DEFAULT_PROVIDER:dashscope}
+    agent-utils:
+      skills-root: ${APP_AI_AGENT_UTILS_SKILLS_ROOT:classpath:skills}
+    providers:
+      dashscope:
+        base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+        api-key: ${DASHSCOPE_API_KEY:}
+        model: ${QWEN_CHAT_MODEL:qwen-plus}
+      qwen-local:
+        base-url: ${LOCAL_OPENAI_BASE_URL:http://127.0.0.1:11434/v1}
+        api-key: ${LOCAL_OPENAI_API_KEY:}
+        model: ${LOCAL_OPENAI_MODEL:qwen2.5:7b}
+    advisors:
+      enabled: ${APP_AI_ADVISORS_ENABLED:false}
+      tool-call-enabled: ${APP_AI_ADVISORS_TOOL_CALL_ENABLED:false}
+      tool-call-conversation-history-enabled: ${APP_AI_ADVISORS_TOOL_CALL_CONVERSATION_HISTORY_ENABLED:false}
+      stream-tool-call-responses: ${APP_AI_ADVISORS_STREAM_TOOL_CALL_RESPONSES:false}
+      message-chat-memory-enabled: ${APP_AI_ADVISORS_MESSAGE_CHAT_MEMORY_ENABLED:false}
+      message-chat-memory-max-messages: ${APP_AI_ADVISORS_MESSAGE_CHAT_MEMORY_MAX_MESSAGES:20}
+      simple-logger-enabled: ${APP_AI_ADVISORS_SIMPLE_LOGGER_ENABLED:false}
+    structured-max-attempts: ${APP_AI_STRUCTURED_MAX_ATTEMPTS:2}
+    structured-include-last-error: ${APP_AI_STRUCTURED_INCLUDE_LAST_ERROR:true}
+    structured-retry-use-repair-prompt: ${APP_AI_STRUCTURED_RETRY_USE_REPAIR_PROMPT:true}
+    structured-retry-append-strict-json-instruction: ${APP_AI_STRUCTURED_RETRY_APPEND_STRICT_JSON_INSTRUCTION:true}
+    structured-error-message-max-length: ${APP_AI_STRUCTURED_ERROR_MESSAGE_MAX_LENGTH:200}
+    rag:
+      rewrite:
+        enabled: ${APP_AI_RAG_REWRITE_ENABLED:true}
+      search:
+        short-query-length: ${APP_AI_RAG_SHORT_QUERY_LENGTH:6}
+        topk-short: ${APP_AI_RAG_TOPK_SHORT:8}
+        topk-medium: ${APP_AI_RAG_TOPK_MEDIUM:10}
+        topk-long: ${APP_AI_RAG_TOPK_LONG:12}
+        min-score-short: ${APP_AI_RAG_MIN_SCORE_SHORT:0.35}
+        min-score-default: ${APP_AI_RAG_MIN_SCORE_DEFAULT:0.25}
+      memory:
+        ttl: ${APP_AI_RAG_MEMORY_TTL:24h}
+        max-messages: ${APP_AI_RAG_MEMORY_MAX_MESSAGES:12}
+      vector:
+        chunk-size: ${APP_AI_RAG_VECTOR_CHUNK_SIZE:320}
+        min-chunk-size-chars: ${APP_AI_RAG_VECTOR_MIN_CHUNK_SIZE_CHARS:180}
+        min-chunk-length-to-embed: ${APP_AI_RAG_VECTOR_MIN_CHUNK_LENGTH_TO_EMBED:40}
+        max-num-chunks: ${APP_AI_RAG_VECTOR_MAX_NUM_CHUNKS:512}
+        repair-missing-chunk-count-on-startup: ${APP_AI_RAG_VECTOR_REPAIR_MISSING_CHUNK_COUNT_ON_STARTUP:true}
+  interview:
+    follow-up-count: ${APP_INTERVIEW_FOLLOW_UP_COUNT:1}
+    evaluation:
+      batch-size: ${APP_INTERVIEW_EVALUATION_BATCH_SIZE:8}
+  resume:
+    upload-dir: ${APP_RESUME_DIR:./data/resume}
+    allowed-types:
+      - application/pdf
+      - application/msword
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      - text/plain
+  storage:
+    base-dir: ${APP_STORAGE_BASE_DIR:./data}
+    resume-dir: ${APP_RESUME_DIR:./data/resume}
+    knowledge-dir: ${APP_KNOWLEDGE_DIR:./data/knowledge}
+    public-url-prefix: ${APP_STORAGE_PUBLIC_URL_PREFIX:/api/files}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:4173,http://localhost:8081}

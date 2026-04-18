@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.resume.repository.ResumeAnalysisRepository">
+
+  <resultMap id="ResumeAnalysisEntityMap" type="interview.guide.modules.resume.model.ResumeAnalysisEntity">
+    <id property="id" column="id"/>
+    <result property="overallScore" column="overall_score"/>
+    <result property="contentScore" column="content_score"/>
+    <result property="structureScore" column="structure_score"/>
+    <result property="skillMatchScore" column="skill_match_score"/>
+    <result property="expressionScore" column="expression_score"/>
+    <result property="projectScore" column="project_score"/>
+    <result property="summary" column="summary"/>
+    <result property="strengthsJson" column="strengths_json"/>
+    <result property="suggestionsJson" column="suggestions_json"/>
+    <result property="analyzedAt" column="analyzed_at"/>
+    <association property="resume" javaType="interview.guide.modules.resume.model.ResumeEntity">
+      <id property="id" column="r_id"/>
+      <result property="fileHash" column="r_file_hash"/>
+      <result property="originalFilename" column="r_original_filename"/>
+      <result property="fileSize" column="r_file_size"/>
+      <result property="contentType" column="r_content_type"/>
+      <result property="storageKey" column="r_storage_key"/>
+      <result property="storageUrl" column="r_storage_url"/>
+      <result property="resumeText" column="r_resume_text"/>
+      <result property="uploadedAt" column="r_uploaded_at"/>
+      <result property="lastAccessedAt" column="r_last_accessed_at"/>
+      <result property="accessCount" column="r_access_count"/>
+      <result property="analyzeStatus" column="r_analyze_status"/>
+      <result property="analyzeError" column="r_analyze_error"/>
+    </association>
+  </resultMap>
+
+  <sql id="ResumeAnalysisSelect">
+    SELECT a.id,
+           a.resume_id,
+           a.overall_score,
+           a.content_score,
+           a.structure_score,
+           a.skill_match_score,
+           a.expression_score,
+           a.project_score,
+           a.summary,
+           a.strengths_json,
+           a.suggestions_json,
+           a.analyzed_at,
+           r.id AS r_id,
+           r.file_hash AS r_file_hash,
+           r.original_filename AS r_original_filename,
+           r.file_size AS r_file_size,
+           r.content_type AS r_content_type,
+           r.storage_key AS r_storage_key,
+           r.storage_url AS r_storage_url,
+           r.resume_text AS r_resume_text,
+           r.uploaded_at AS r_uploaded_at,
+           r.last_accessed_at AS r_last_accessed_at,
+           r.access_count AS r_access_count,
+           r.analyze_status AS r_analyze_status,
+           r.analyze_error AS r_analyze_error
+    FROM resume_analyses a
+    JOIN resumes r ON r.id = a.resume_id
+  </sql>
+
+  <select id="selectByIdInternal" resultMap="ResumeAnalysisEntityMap">
+    <include refid="ResumeAnalysisSelect"/>
+    WHERE a.id = #{id}
+  </select>
+
+  <select id="selectLatestByResumeIdInternal" resultMap="ResumeAnalysisEntityMap">
+    <include refid="ResumeAnalysisSelect"/>
+    WHERE a.resume_id = #{resumeId}
+    ORDER BY a.analyzed_at DESC
+    LIMIT 1
+  </select>
+
+  <select id="selectByResumeIdInternal" resultMap="ResumeAnalysisEntityMap">
+    <include refid="ResumeAnalysisSelect"/>
+    WHERE a.resume_id = #{resumeId}
+    ORDER BY a.analyzed_at DESC
+  </select>
+
+  <insert id="insertEntity" useGeneratedKeys="true" keyProperty="entity.id">
+    INSERT INTO resume_analyses (
+      resume_id,
+      overall_score,
+      content_score,
+      structure_score,
+      skill_match_score,
+      expression_score,
+      project_score,
+      summary,
+      strengths_json,
+      suggestions_json,
+      analyzed_at
+    ) VALUES (
+      #{entity.resume.id},
+      #{entity.overallScore},
+      #{entity.contentScore},
+      #{entity.structureScore},
+      #{entity.skillMatchScore},
+      #{entity.expressionScore},
+      #{entity.projectScore},
+      #{entity.summary},
+      #{entity.strengthsJson},
+      #{entity.suggestionsJson},
+      COALESCE(#{entity.analyzedAt}, NOW())
+    )
+  </insert>
+
+  <update id="updateEntity">
+    UPDATE resume_analyses
+    SET resume_id = #{entity.resume.id},
+        overall_score = #{entity.overallScore},
+        content_score = #{entity.contentScore},
+        structure_score = #{entity.structureScore},
+        skill_match_score = #{entity.skillMatchScore},
+        expression_score = #{entity.expressionScore},
+        project_score = #{entity.projectScore},
+        summary = #{entity.summary},
+        strengths_json = #{entity.strengthsJson},
+        suggestions_json = #{entity.suggestionsJson},
+        analyzed_at = #{entity.analyzedAt}
+    WHERE id = #{entity.id}
+  </update>
+
+  <delete id="deleteByIdInternal">
+    DELETE FROM resume_analyses WHERE id = #{id}
+  </delete>
+</mapper>

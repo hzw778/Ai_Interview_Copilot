@@ -1,0 +1,40 @@
+# Build output
+.gradle/
+build/
+target/
+data/
+/app/bin/
+frontend/node_modules/
+frontend/dist/
+
+# Local environment files
+.env
+.env.*
+test-output.txt
+app/src/main/resources/application-dev.yml
+
+# IDE and tooling
+.claude/
+.idea/
+.playwright-mcp/
+qodana.yaml
+
+# Private docs and workspace instructions
+/docs/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+CODEX_CLAUDE_RULES.md
+SETUP_API_KEYS.md
+LICENSE
+
+# Local deployment configs
+docker-compose.yml
+docker-compose.dev.yml
+
+# Runtime skill assets should not be published
+app/src/main/resources/skills/
+
+# Exclude Markdown files except the repository landing page
+*.md
+!/README.md

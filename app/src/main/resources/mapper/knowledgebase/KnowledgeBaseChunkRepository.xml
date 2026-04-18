@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.knowledgebase.repository.KnowledgeBaseChunkRepository">
+
+  <resultMap id="KnowledgeBaseChunkEntityMap" type="interview.guide.modules.knowledgebase.model.KnowledgeBaseChunkEntity">
+    <id property="id" column="id"/>
+    <result property="knowledgeBaseId" column="knowledge_base_id"/>
+    <result property="documentId" column="document_id"/>
+    <result property="chunkIndex" column="chunk_index"/>
+    <result property="content" column="content"/>
+    <result property="contentLength" column="content_length"/>
+    <result property="embeddingJson" column="embedding_json"/>
+    <result property="sourceName" column="source_name"/>
+    <result property="sourceFilename" column="source_filename"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+  </resultMap>
+
+  <resultMap id="KnowledgeBaseChunkLightMap" type="interview.guide.modules.knowledgebase.model.KnowledgeBaseChunkEntity">
+    <id property="id" column="id"/>
+    <result property="knowledgeBaseId" column="knowledge_base_id"/>
+    <result property="documentId" column="document_id"/>
+    <result property="chunkIndex" column="chunk_index"/>
+    <result property="content" column="content"/>
+    <result property="contentLength" column="content_length"/>
+    <result property="sourceName" column="source_name"/>
+    <result property="sourceFilename" column="source_filename"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+  </resultMap>
+
+  <select id="findByDocumentIds" resultMap="KnowledgeBaseChunkLightMap">
+    SELECT
+      id,
+      knowledge_base_id,
+      document_id,
+      chunk_index,
+      content,
+      content_length,
+      source_name,
+      source_filename,
+      created_at,
+      updated_at
+    FROM knowledge_base_chunks
+    <where>
+      <choose>
+        <when test="documentIds != null and documentIds.size() > 0">
+          document_id IN
+          <foreach collection="documentIds" item="documentId" open="(" separator="," close=")">
+            #{documentId}
+          </foreach>
+        </when>
+        <otherwise>
+          1 = 0
+        </otherwise>
+      </choose>
+    </where>
+  </select>
+
+  <select id="findLightweightByKnowledgeBaseIds" resultMap="KnowledgeBaseChunkLightMap">
+    SELECT
+      id,
+      knowledge_base_id,
+      document_id,
+      chunk_index,
+      content,
+      content_length,
+      source_name,
+      source_filename,
+      created_at,
+      updated_at
+    FROM knowledge_base_chunks
+    <where>
+      <choose>
+        <when test="knowledgeBaseIds != null and knowledgeBaseIds.size() > 0">
+          knowledge_base_id IN
+          <foreach collection="knowledgeBaseIds" item="knowledgeBaseId" open="(" separator="," close=")">
+            #{knowledgeBaseId}
+          </foreach>
+        </when>
+        <otherwise>
+          1 = 0
+        </otherwise>
+      </choose>
+    </where>
+    ORDER BY knowledge_base_id ASC, chunk_index ASC
+  </select>
+
+  <select id="findTopByKnowledgeBaseId" resultMap="KnowledgeBaseChunkLightMap">
+    SELECT
+      id,
+      knowledge_base_id,
+      document_id,
+      chunk_index,
+      content,
+      content_length,
+      source_name,
+      source_filename,
+      created_at,
+      updated_at
+    FROM knowledge_base_chunks
+    WHERE knowledge_base_id = #{knowledgeBaseId}
+    ORDER BY chunk_index ASC
+    LIMIT #{limit}
+  </select>
+
+  <select id="findDocumentIdsByKnowledgeBaseId" resultType="string">
+    SELECT document_id
+    FROM knowledge_base_chunks
+    WHERE knowledge_base_id = #{knowledgeBaseId}
+    ORDER BY chunk_index ASC
+  </select>
+
+  <delete id="deleteByKnowledgeBaseId">
+    DELETE FROM knowledge_base_chunks
+    WHERE knowledge_base_id = #{knowledgeBaseId}
+  </delete>
+
+  <insert id="batchInsert">
+    INSERT INTO knowledge_base_chunks (
+      knowledge_base_id,
+      document_id,
+      chunk_index,
+      content,
+      content_length,
+      embedding_json,
+      source_name,
+      source_filename,
+      created_at,
+      updated_at
+    ) VALUES
+    <foreach collection="chunks" item="chunk" separator=",">
+      (
+        #{chunk.knowledgeBaseId},
+        #{chunk.documentId},
+        #{chunk.chunkIndex},
+        #{chunk.content},
+        #{chunk.contentLength},
+        #{chunk.embeddingJson},
+        #{chunk.sourceName},
+        #{chunk.sourceFilename},
+        COALESCE(#{chunk.createdAt}, NOW()),
+        COALESCE(#{chunk.updatedAt}, NOW())
+      )
+    </foreach>
+  </insert>
+</mapper>

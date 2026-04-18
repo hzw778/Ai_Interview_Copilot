@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.knowledgebase.repository.RagChatMessageRepository">
+
+  <resultMap id="RagChatMessageMap" type="interview.guide.modules.knowledgebase.model.RagChatMessageEntity">
+    <id property="id" column="id"/>
+    <result property="type" column="type"/>
+    <result property="content" column="content"/>
+    <result property="messageOrder" column="message_order"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+    <result property="completed" column="completed"/>
+    <association property="session" javaType="interview.guide.modules.knowledgebase.model.RagChatSessionEntity">
+      <id property="id" column="session_id"/>
+    </association>
+  </resultMap>
+
+  <select id="selectByIdInternal" resultMap="RagChatMessageMap">
+    SELECT * FROM rag_chat_messages WHERE id = #{id}
+  </select>
+
+  <select id="findBySessionIdOrderByMessageOrderAsc" resultMap="RagChatMessageMap">
+    SELECT * FROM rag_chat_messages
+    WHERE session_id = #{sessionId}
+    ORDER BY message_order ASC
+  </select>
+
+  <select id="findTopBySessionIdOrderByMessageOrderDescInternal" resultMap="RagChatMessageMap">
+    SELECT * FROM rag_chat_messages
+    WHERE session_id = #{sessionId}
+    ORDER BY message_order DESC
+    LIMIT 1
+  </select>
+
+  <select id="findSessionIdByMessageId" resultType="long">
+    SELECT session_id FROM rag_chat_messages WHERE id = #{id}
+  </select>
+
+  <select id="countBySessionId" resultType="long">
+    SELECT COUNT(*) FROM rag_chat_messages WHERE session_id = #{sessionId}
+  </select>
+
+  <select id="findBySessionIdAndCompletedFalse" resultMap="RagChatMessageMap">
+    SELECT * FROM rag_chat_messages
+    WHERE session_id = #{sessionId}
+      AND completed = FALSE
+    ORDER BY message_order ASC
+  </select>
+
+  <delete id="deleteBySessionId">
+    DELETE FROM rag_chat_messages WHERE session_id = #{sessionId}
+  </delete>
+
+  <select id="countByType" resultType="long">
+    SELECT COUNT(*) FROM rag_chat_messages WHERE type = #{type}
+  </select>
+
+  <insert id="insertEntity" useGeneratedKeys="true" keyProperty="entity.id">
+    INSERT INTO rag_chat_messages (
+      session_id,
+      type,
+      content,
+      message_order,
+      created_at,
+      updated_at,
+      completed
+    ) VALUES (
+      #{entity.session.id},
+      #{entity.type},
+      #{entity.content},
+      #{entity.messageOrder},
+      COALESCE(#{entity.createdAt}, NOW()),
+      COALESCE(#{entity.updatedAt}, NOW()),
+      COALESCE(#{entity.completed}, TRUE)
+    )
+  </insert>
+
+  <update id="updateEntity">
+    UPDATE rag_chat_messages
+    SET type = #{entity.type},
+        content = #{entity.content},
+        message_order = #{entity.messageOrder},
+        updated_at = COALESCE(#{entity.updatedAt}, NOW()),
+        completed = #{entity.completed}
+    WHERE id = #{entity.id}
+  </update>
+</mapper>

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="interview.guide.modules.knowledgebase.repository.KnowledgeBaseRepository">
+
+  <resultMap id="KnowledgeBaseEntityMap" type="interview.guide.modules.knowledgebase.model.KnowledgeBaseEntity">
+    <id property="id" column="id"/>
+    <result property="fileHash" column="file_hash"/>
+    <result property="name" column="name"/>
+    <result property="category" column="category"/>
+    <result property="originalFilename" column="original_filename"/>
+    <result property="fileSize" column="file_size"/>
+    <result property="contentType" column="content_type"/>
+    <result property="storageKey" column="storage_key"/>
+    <result property="storageUrl" column="storage_url"/>
+    <result property="uploadedAt" column="uploaded_at"/>
+    <result property="lastAccessedAt" column="last_accessed_at"/>
+    <result property="accessCount" column="access_count"/>
+    <result property="questionCount" column="question_count"/>
+    <result property="vectorStatus" column="vector_status"/>
+    <result property="vectorError" column="vector_error"/>
+    <result property="chunkCount" column="chunk_count"/>
+  </resultMap>
+
+  <select id="selectByIdInternal" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases WHERE id = #{id}
+  </select>
+
+  <select id="findAllById" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases
+    <where>
+      <choose>
+        <when test="ids != null and ids.size() > 0">
+          id IN
+          <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+          </foreach>
+        </when>
+        <otherwise>
+          1 = 0
+        </otherwise>
+      </choose>
+    </where>
+    ORDER BY uploaded_at DESC
+  </select>
+
+  <select id="selectByFileHashInternal" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases WHERE file_hash = #{fileHash}
+  </select>
+
+  <select id="countByIdInternal" resultType="int">
+    SELECT COUNT(*) FROM knowledge_bases WHERE id = #{id}
+  </select>
+
+  <select id="countByFileHashInternal" resultType="int">
+    SELECT COUNT(*) FROM knowledge_bases WHERE file_hash = #{fileHash}
+  </select>
+
+  <select id="findAllByOrderByUploadedAtDesc" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases ORDER BY uploaded_at DESC
+  </select>
+
+  <select id="findAllCategories" resultType="string">
+    SELECT DISTINCT category
+    FROM knowledge_bases
+    WHERE category IS NOT NULL
+    ORDER BY category
+  </select>
+
+  <select id="findByCategoryOrderByUploadedAtDesc" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases
+    WHERE category = #{category}
+    ORDER BY uploaded_at DESC
+  </select>
+
+  <select id="findByCategoryIsNullOrderByUploadedAtDesc" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases
+    WHERE category IS NULL
+    ORDER BY uploaded_at DESC
+  </select>
+
+  <select id="searchByKeyword" resultMap="KnowledgeBaseEntityMap">
+    SELECT *
+    FROM knowledge_bases
+    WHERE LOWER(name) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+       OR LOWER(original_filename) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+    ORDER BY uploaded_at DESC
+  </select>
+
+  <select id="findAllByOrderByFileSizeDesc" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases ORDER BY file_size DESC
+  </select>
+
+  <select id="findAllByOrderByAccessCountDesc" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases ORDER BY access_count DESC
+  </select>
+
+  <select id="findAllByOrderByQuestionCountDesc" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases ORDER BY question_count DESC
+  </select>
+
+  <update id="incrementQuestionCountBatch">
+    UPDATE knowledge_bases
+    SET question_count = question_count + 1
+    <where>
+      <choose>
+        <when test="ids != null and ids.size() > 0">
+          id IN
+          <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+          </foreach>
+        </when>
+        <otherwise>
+          1 = 0
+        </otherwise>
+      </choose>
+    </where>
+  </update>
+
+  <select id="sumQuestionCount" resultType="long">
+    SELECT COALESCE(SUM(question_count), 0) FROM knowledge_bases
+  </select>
+
+  <select id="sumAccessCount" resultType="long">
+    SELECT COALESCE(SUM(access_count), 0) FROM knowledge_bases
+  </select>
+
+  <select id="count" resultType="long">
+    SELECT COUNT(*) FROM knowledge_bases
+  </select>
+
+  <select id="countByVectorStatus" resultType="long">
+    SELECT COUNT(*) FROM knowledge_bases WHERE vector_status = #{vectorStatus}
+  </select>
+
+  <select id="findByVectorStatusOrderByUploadedAtDesc" resultMap="KnowledgeBaseEntityMap">
+    SELECT * FROM knowledge_bases
+    WHERE vector_status = #{vectorStatus}
+    ORDER BY uploaded_at DESC
+  </select>
+
+  <insert id="insertEntity" useGeneratedKeys="true" keyProperty="entity.id">
+    INSERT INTO knowledge_bases (
+      file_hash,
+      name,
+      category,
+      original_filename,
+      file_size,
+      content_type,
+      storage_key,
+      storage_url,
+      uploaded_at,
+      last_accessed_at,
+      access_count,
+      question_count,
+      vector_status,
+      vector_error,
+      chunk_count
+    ) VALUES (
+      #{entity.fileHash},
+      #{entity.name},
+      #{entity.category},
+      #{entity.originalFilename},
+      #{entity.fileSize},
+      #{entity.contentType},
+      #{entity.storageKey},
+      #{entity.storageUrl},
+      COALESCE(#{entity.uploadedAt}, NOW()),
+      COALESCE(#{entity.lastAccessedAt}, NOW()),
+      COALESCE(#{entity.accessCount}, 1),
+      COALESCE(#{entity.questionCount}, 0),
+      #{entity.vectorStatus},
+      #{entity.vectorError},
+      COALESCE(#{entity.chunkCount}, 0)
+    )
+  </insert>
+
+  <update id="updateEntity">
+    UPDATE knowledge_bases
+    SET file_hash = #{entity.fileHash},
+        name = #{entity.name},
+        category = #{entity.category},
+        original_filename = #{entity.originalFilename},
+        file_size = #{entity.fileSize},
+        content_type = #{entity.contentType},
+        storage_key = #{entity.storageKey},
+        storage_url = #{entity.storageUrl},
+        uploaded_at = #{entity.uploadedAt},
+        last_accessed_at = #{entity.lastAccessedAt},
+        access_count = #{entity.accessCount},
+        question_count = #{entity.questionCount},
+        vector_status = #{entity.vectorStatus},
+        vector_error = #{entity.vectorError},
+        chunk_count = #{entity.chunkCount}
+    WHERE id = #{entity.id}
+  </update>
+
+  <delete id="deleteById">
+    DELETE FROM knowledge_bases WHERE id = #{id}
+  </delete>
+</mapper>
